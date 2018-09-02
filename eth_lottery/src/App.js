@@ -7,6 +7,8 @@ class App extends Component {
 
   state = {
     manager: '',
+    isManager: false,
+    accounts:[],
     players: [],
     balance: '',
     value:'',
@@ -18,11 +20,24 @@ class App extends Component {
     const manager = await lottery.methods.manager().call();
     const players = await lottery.methods.returnPlayers().call();
     const balance = await web3.eth.getBalance(lottery.options.address);
+    const accounts = await web3.eth.getAccounts();
 
     this.setState({
       manager,
       players,
       balance,
+      accounts
+    });
+
+    let isManager;
+    if (this.state.manager === this.state.accounts[0]) {
+      isManager = true;
+    } else {
+      isManager = false;
+    }
+
+    this.setState({
+      isManager
     });
 
   }
@@ -42,6 +57,14 @@ class App extends Component {
     });
   }
 
+  async handlePickWinner() {
+    this.setState({message: 'Waiting on transaction success...'});
+    await lottery.methods.pickWinner().send({
+      from: this.state.accounts[0]
+    });
+    this.setState({ message: 'A winner has been picked!' });
+  }
+
   render() {
     return (
       <div>
@@ -58,8 +81,18 @@ class App extends Component {
           </div>
           <button>Enter</button>
         </form>
+
         <hr/>
+
+        {this.state.isManager ? <div>
+          <h4>Time to pick a winner?</h4>
+          <button onClick = {() => this.handlePickWinner()}>PICK A WINNER</button>
+        </div> : null}
+
+        <hr/>
+
         <h1>{this.state.message}</h1>
+
       </div>
     );
   }
